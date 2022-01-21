@@ -161,7 +161,7 @@ def run_nmap(
         for prefix in prefixes:
             LOG.info(f"Adding {prefix} scans to run queue")
             
-            for address in ip_network(prefix).hosts():
+            for address in ip_network(prefix):
                 nmap_futures.append(
                     executor.submit(
                         nmap_prefix,
