@@ -5,8 +5,7 @@ Wrap NMAP and scan port dumping data to arbitrary data stores.
 # Install
 
 From GitHub:
-- `pip install git+https://github.com/cooperlees/json2netns`
-
+- `pip install git+https://github.com/cooperlees/nmapscanner`
 
 # Usage
 
