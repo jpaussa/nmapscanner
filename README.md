@@ -15,7 +15,7 @@ TBA
 
 ```console
 python3 -m venv [--upgrade-deps] /tmp/tn
-/tmp/tj/bin/pip install -e .
+/tmp/tn/bin/pip install -e .
 ````
 
 ## Run Tests
@@ -23,7 +23,7 @@ python3 -m venv [--upgrade-deps] /tmp/tn
 For testing we use [ptr](https://github.com/facebookincubator/ptr/).
 
 ```console
-/tmp/tj/bin/ptr [-k] [--print-cov] [--debug] [--venv]
+/tmp/tn/bin/ptr [-k] [--print-cov] [--debug] [--venv]
 ```
 
 - `-k`: keep testing venv ptr creates
