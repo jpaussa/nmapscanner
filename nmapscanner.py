@@ -7,7 +7,7 @@ import shlex
 from concurrent.futures import as_completed, ThreadPoolExecutor
 from copy import copy
 from datetime import datetime
-from ipaddress import ip_address, IPv4Address, IPv6Address
+from ipaddress import ip_address, ip_network, IPv4Address, IPv6Address
 from os import sep
 from pathlib import Path
 from subprocess import PIPE, run, SubprocessError
@@ -160,22 +160,19 @@ def run_nmap(
     with ThreadPoolExecutor(max_workers=atonce) as executor:
         for prefix in prefixes:
             LOG.info(f"Adding {prefix} scans to run queue")
-            if "/" in prefix:
-                address = f"{prefix.split('/', 1)[0]}1"
-            else:
-                address = prefix
-
-            nmap_futures.append(
-                executor.submit(
-                    nmap_prefix,
-                    ip_address(address),
-                    output_path,
-                    nmap,
-                    nmap_timeout,
-                    shell_safe_extra_ops,
-                    all_ports,
+            
+            for address in ip_network(prefix):
+                nmap_futures.append(
+                    executor.submit(
+                        nmap_prefix,
+                        ip_address(address),
+                        output_path,
+                        nmap,
+                        nmap_timeout,
+                        shell_safe_extra_ops,
+                        all_ports,
+                    )
                 )
-            )
 
         success = 0
         fail = 0
