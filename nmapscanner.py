@@ -160,7 +160,7 @@ def run_nmap(
     with ThreadPoolExecutor(max_workers=atonce) as executor:
         for prefix in prefixes:
             LOG.info(f"Adding {prefix} scans to run queue")
-            
+
             for address in ip_network(prefix):
                 nmap_futures.append(
                     executor.submit(
