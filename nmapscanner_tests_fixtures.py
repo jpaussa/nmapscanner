@@ -1,17 +1,49 @@
 #!/usr/bin/env python3
 # flake8: noqa
 
+from os.path import sep
+
+
+NMAP_BIN = f"{sep}bin{sep}nmap"
+
 
 EXPECTED_NMAP_ALL_PORTS_CMDS = [
-    ["/bin/nmap", "-6", "-p-", "-Pn", "-sS", "-oX", "/tmp/no/69::69_TCP", "69::69"],
-    ["/bin/nmap", "-6", "-p-", "-Pn", "-sU", "-oX", "/tmp/no/69::69_UDP", "69::69"],
+    [
+        NMAP_BIN,
+        "-6",
+        "-p-",
+        "-Pn",
+        "-sS",
+        "-oX",
+        f"{sep}tmp{sep}no{sep}69::69_TCP",
+        "69::69",
+    ],
+    [
+        NMAP_BIN,
+        "-6",
+        "-p-",
+        "-Pn",
+        "-sU",
+        "-oX",
+        f"{sep}tmp{sep}no{sep}69::69_UDP",
+        "69::69",
+    ],
 ]
 EXPECTED_NMAP_DEFAULT_CMDS = [
-    ["/bin/nmap", "-6", "-Pn", "-sS", "-oX", "/tmp/no/69::69_TCP", "69::69"],
-    ["/bin/nmap", "-6", "-Pn", "-sU", "-oX", "/tmp/no/69::69_UDP", "69::69"],
+    [NMAP_BIN, "-6", "-Pn", "-sS", "-oX", f"{sep}tmp{sep}no{sep}69::69_TCP", "69::69"],
+    [NMAP_BIN, "-6", "-Pn", "-sU", "-oX", f"{sep}tmp{sep}no{sep}69::69_UDP", "69::69"],
 ]
 EXPECTED_NMAP_CUSTOM_CMD = [
-    ["/bin/nmap", "-6", "-sU", "-p", "69", "-oX", "/tmp/no/69::69_CUSTOM", "69::69"]
+    [
+        NMAP_BIN,
+        "-6",
+        "-sU",
+        "-p",
+        "69",
+        "-oX",
+        f"{sep}tmp{sep}no{sep}69::69_CUSTOM",
+        "69::69",
+    ]
 ]
 
 
