@@ -7,7 +7,7 @@ import shlex
 from concurrent.futures import as_completed, ThreadPoolExecutor
 from copy import copy
 from datetime import datetime
-from ipaddress import ip_address, ip_network, IPv4Address, IPv6Address
+from ipaddress import ip_network, IPv4Network, IPv6Network
 from os import sep
 from pathlib import Path
 from subprocess import PIPE, run, SubprocessError
@@ -71,8 +71,12 @@ def get_nmap_result(nmap_xml_file: Path) -> Dict:
     return nmap_data
 
 
+def sanitize_filename(filename: str) -> str:
+    return filename.replace("/", "_")
+
+
 def generate_nmap_cmd(
-    ipaddr: Union[IPv4Address, IPv6Address],
+    ipnet: Union[IPv4Network, IPv6Network],
     output_path: Path,
     nmap: Path,
     timeout: int,
@@ -81,7 +85,7 @@ def generate_nmap_cmd(
 ) -> List[List[str]]:
     nmap_cmds: List[List[str]] = []
     nmap_base_cmd = [str(nmap)]
-    if ipaddr.version == 6:
+    if ipnet.version == 6:
         nmap_base_cmd.append("-6")
 
     if all_ports:
@@ -89,10 +93,10 @@ def generate_nmap_cmd(
         nmap_base_cmd.append("-p-")
 
     if custom_args:
-        output_logfile = output_path / f"{str(ipaddr)}_CUSTOM"
+        output_logfile = output_path / sanitize_filename(f"{str(ipnet)}_CUSTOM")
         nmap_cmd = nmap_base_cmd
         nmap_cmd.extend(custom_args)
-        nmap_cmd.extend(["-oX", str(output_logfile), str(ipaddr)])
+        nmap_cmd.extend(["-oX", str(output_logfile), str(ipnet)])
         nmap_cmds.append(nmap_cmd)
     else:
         for nmap_proto in ("-sS", "-sU"):
@@ -101,19 +105,17 @@ def generate_nmap_cmd(
             if nmap_proto == "-sU":
                 protocol = "UDP"
 
-            output_logfile = output_path / f"{str(ipaddr)}_{protocol}"
+            output_logfile = output_path / sanitize_filename(f"{str(ipnet)}_{protocol}")
             # -Pn stops ping probe detection
             # -oX gives us XML output to parse
-            nmap_cmd.extend(
-                ["-Pn", nmap_proto, "-oX", str(output_logfile), str(ipaddr)]
-            )
+            nmap_cmd.extend(["-Pn", nmap_proto, "-oX", str(output_logfile), str(ipnet)])
             nmap_cmds.append(nmap_cmd)
 
     return nmap_cmds
 
 
 def nmap_prefix(
-    ipaddr: Union[IPv4Address, IPv6Address],
+    ipnet: Union[IPv4Network, IPv6Network],
     output_path: Path,
     nmap: Path,
     timeout: int,
@@ -121,23 +123,23 @@ def nmap_prefix(
     all_ports: bool,
 ) -> int:
     nmap_cmds = generate_nmap_cmd(
-        ipaddr, output_path, nmap, timeout, custom_args, all_ports
+        ipnet, output_path, nmap, timeout, custom_args, all_ports
     )
     custom = " CUSTOM " if custom_args else " "
     for nmap_cmd in nmap_cmds:
         err = 0
         start_time = time()
         friendly_nmap_cmd = " ".join(nmap_cmd)
-        LOG.info(f"{ipaddr} -{custom}'{friendly_nmap_cmd}' starting")
+        LOG.info(f"{ipnet} -{custom}'{friendly_nmap_cmd}' starting")
         try:
-            run(nmap_cmd, stdout=PIPE, stderr=PIPE, timeout=timeout)
+            LOG.debug(run(nmap_cmd, stdout=PIPE, stderr=PIPE, timeout=timeout))
         except SubprocessError as spe:
-            LOG.error(f"{ipaddr} - '{nmap_cmd}' FAILED: {spe}")
+            LOG.error(f"{ipnet} - '{nmap_cmd}' FAILED: {spe}")
             err += 1
             continue
 
         runtime = int(time() - start_time)
-        LOG.info(f"{ipaddr} -{custom}'{friendly_nmap_cmd}' complete ({runtime}s)")
+        LOG.info(f"{ipnet} -{custom}'{friendly_nmap_cmd}' complete ({runtime}s)")
 
     return err
 
@@ -160,18 +162,17 @@ def run_nmap(
     with ThreadPoolExecutor(max_workers=atonce) as executor:
         for prefix in prefixes:
             LOG.info(f"Adding {prefix} scans to run queue")
-            for address in ip_network(prefix):
-                nmap_futures.append(
-                    executor.submit(
-                        nmap_prefix,
-                        ip_address(address),
-                        output_path,
-                        nmap,
-                        nmap_timeout,
-                        shell_safe_extra_ops,
-                        all_ports,
-                    )
+            nmap_futures.append(
+                executor.submit(
+                    nmap_prefix,
+                    ip_network(prefix),
+                    output_path,
+                    nmap,
+                    nmap_timeout,
+                    shell_safe_extra_ops,
+                    all_ports,
                 )
+            )
 
         success = 0
         fail = 0
